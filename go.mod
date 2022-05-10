@@ -3,6 +3,7 @@ module github.com/pojntfx/webpipe
 go 1.18
 
 require (
+	github.com/fsnotify/fsnotify v1.5.1
 	github.com/pojntfx/weron v0.2.0
 	github.com/rs/zerolog v1.26.1
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
