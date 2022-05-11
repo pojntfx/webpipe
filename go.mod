@@ -4,6 +4,8 @@ go 1.18
 
 require (
 	github.com/fsnotify/fsnotify v1.5.1
+	github.com/jacobsa/fuse v0.0.0-20220303083136-48612565d5c8
+	github.com/jacobsa/timeutil v0.0.0-20170205232429-577e5acbbcf6
 	github.com/pojntfx/weron v0.2.0
 	github.com/rs/zerolog v1.26.1
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
@@ -12,6 +14,7 @@ require (
 require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/jacobsa/oglematchers v0.0.0-20150720000706-141901ea67cd // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
