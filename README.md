@@ -1,6 +1,6 @@
 # WebPipe
 
-Share files, sockets, pipes and devices over WebRTC.
+Share files, sockets, pipes and char devices over WebRTC.
 
 ## Overview
 
