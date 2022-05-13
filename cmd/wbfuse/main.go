@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/jacobsa/fuse"
@@ -21,12 +20,31 @@ const (
 	fileInode
 )
 
+type readWriterAt interface {
+	io.ReaderAt
+	io.WriterAt
+	Size() (int64, error)
+}
+
+type fileWithSize struct {
+	*os.File
+}
+
+func (f *fileWithSize) Size() (int64, error) {
+	stat, err := f.Stat()
+	if err != nil {
+		return -1, err
+	}
+
+	return stat.Size(), nil
+}
+
 type fs struct {
 	fuseutil.NotImplementedFileSystem
 
 	clock    timeutil.Clock
 	filename string
-	content  *strings.Reader
+	backend  readWriterAt
 }
 
 func updateTimestamps(clock timeutil.Clock, attr *fuseops.InodeAttributes) {
@@ -54,10 +72,15 @@ func (f *fs) GetInodeAttributes(
 	}
 
 	if op.Inode == fileInode {
+		size, err := f.backend.Size()
+		if err != nil {
+			return err
+		}
+
 		op.Attributes = fuseops.InodeAttributes{
 			Nlink: 1,
 			Mode:  os.ModePerm,
-			Size:  uint64(f.content.Len()),
+			Size:  uint64(size),
 		}
 
 		updateTimestamps(f.clock, &op.Attributes)
@@ -72,11 +95,16 @@ func (f *fs) LookUpInode(
 	ctx context.Context,
 	op *fuseops.LookUpInodeOp) error {
 	if op.Parent == rootInode {
+		size, err := f.backend.Size()
+		if err != nil {
+			return err
+		}
+
 		op.Entry.Child = fileInode
 		op.Entry.Attributes = fuseops.InodeAttributes{
 			Nlink: 1,
 			Mode:  os.ModePerm,
-			Size:  uint64(f.content.Len()),
+			Size:  uint64(size),
 		}
 
 		return nil
@@ -152,7 +180,7 @@ func (f *fs) ReadFile(
 	op *fuseops.ReadFileOp) error {
 	if op.Inode == fileInode {
 		var err error
-		op.BytesRead, err = f.content.ReadAt(op.Dst, op.Offset)
+		op.BytesRead, err = f.backend.ReadAt(op.Dst, op.Offset)
 
 		if err == io.EOF {
 			return nil
@@ -176,31 +204,59 @@ func (f *fs) ReleaseFileHandle(
 	return nil
 }
 
+func (f *fs) WriteFile(
+	ctx context.Context,
+	op *fuseops.WriteFileOp) error {
+	if op.Inode == fileInode {
+		_, err := f.backend.WriteAt(op.Data, op.Offset)
+
+		if err == io.EOF {
+			return nil
+		}
+
+		return err
+	}
+
+	return fuse.ENOENT
+}
+
+func (f *fs) SetInodeAttributes(
+	ctx context.Context,
+	op *fuseops.SetInodeAttributesOp) error {
+	return nil
+}
+
 func main() {
-	mountpoint := flag.String("mountpoint", "/tmp/wbfuse", "Where to mount the FUSE to")
-	filename := flag.String("filename", "file.entangle", "Name of the file to mount")
-	verbose := flag.Bool("verbose", false, "Whether to enable verbose logging")
+	mountpointFlag := flag.String("mountpoint", "/tmp/wbfuse-mountpoint", "Where to mount the FUSE to")
+	filenameFlag := flag.String("filename", "file.entangled", "Name of the file to mount")
+	backendFlag := flag.String("backend", "/tmp/wbfuse-backend.entangled", "Name of the file to use as the backend")
+	verboseFlag := flag.Bool("verbose", false, "Whether to enable verbose logging")
 
 	flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	if err := os.MkdirAll(*mountpoint, os.ModePerm); err != nil {
+	backend, err := os.OpenFile(*backendFlag, os.O_CREATE|os.O_RDWR, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := os.MkdirAll(*mountpointFlag, os.ModePerm); err != nil {
 		panic(err)
 	}
 
 	cfg := &fuse.MountConfig{}
-	if *verbose {
+	if *verboseFlag {
 		cfg.DebugLogger = log.New(os.Stderr, "fuse: ", 0)
 	}
 
 	mount, err := fuse.Mount(
-		*mountpoint,
+		*mountpointFlag,
 		fuseutil.NewFileSystemServer(
 			&fs{
 				clock:    timeutil.RealClock(),
-				filename: *filename,
-				content:  strings.NewReader("Hello, world!"),
+				filename: *filenameFlag,
+				backend:  &fileWithSize{backend},
 			},
 		),
 		cfg,
@@ -226,7 +282,11 @@ func main() {
 			os.Exit(1)
 		}()
 
-		if err := fuse.Unmount(*mountpoint); err != nil {
+		if err := backend.Close(); err != nil {
+			panic(err)
+		}
+
+		if err := fuse.Unmount(*mountpointFlag); err != nil {
 			panic(err)
 		}
 	}()
