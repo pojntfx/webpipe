@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jacobsa/fuse"
 	"github.com/jacobsa/fuse/fuseops"
@@ -24,6 +25,7 @@ type readWriterAt interface {
 	io.ReaderAt
 	io.WriterAt
 	Size() (int64, error)
+	Time() (atime time.Time, mtime time.Time, crtime time.Time, err error)
 }
 
 type fileWithSize struct {
@@ -39,6 +41,17 @@ func (f *fileWithSize) Size() (int64, error) {
 	return stat.Size(), nil
 }
 
+func (f *fileWithSize) Time() (atime time.Time, mtime time.Time, crtime time.Time, err error) {
+	stat, err := f.Stat()
+	if err != nil {
+		return time.Now(), time.Now(), time.Now(), err
+	}
+
+	unixStat := stat.Sys().(*syscall.Stat_t)
+
+	return time.Unix(int64(unixStat.Atim.Sec), int64(unixStat.Atim.Nsec)), stat.ModTime(), time.Unix(int64(unixStat.Ctim.Sec), int64(unixStat.Ctim.Nsec)), nil
+}
+
 type fs struct {
 	fuseutil.NotImplementedFileSystem
 
@@ -47,12 +60,17 @@ type fs struct {
 	backend  readWriterAt
 }
 
-func updateTimestamps(clock timeutil.Clock, attr *fuseops.InodeAttributes) {
-	now := clock.Now()
+func (f *fs) updateTimestamps(attr *fuseops.InodeAttributes) error {
+	atime, mtime, crtime, err := f.backend.Time()
+	if err != nil {
+		return err
+	}
 
-	attr.Atime = now
-	attr.Mtime = now
-	attr.Crtime = now
+	attr.Atime = atime
+	attr.Mtime = mtime
+	attr.Crtime = crtime
+
+	return nil
 }
 
 // General inode implementation
@@ -66,7 +84,9 @@ func (f *fs) GetInodeAttributes(
 			Mode:  os.ModePerm | os.ModeDir,
 		}
 
-		updateTimestamps(f.clock, &op.Attributes)
+		if err := f.updateTimestamps(&op.Attributes); err != nil {
+			return err
+		}
 
 		return nil
 	}
@@ -83,7 +103,9 @@ func (f *fs) GetInodeAttributes(
 			Size:  uint64(size),
 		}
 
-		updateTimestamps(f.clock, &op.Attributes)
+		if err := f.updateTimestamps(&op.Attributes); err != nil {
+			return err
+		}
 
 		return nil
 	}
