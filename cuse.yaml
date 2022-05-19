@@ -1,0 +1,58 @@
+GENERATOR:
+  PackageName: pkg/cuse
+  PkgConfigOpts:
+    - fuse3
+  SysIncludes:
+    - fuse.h
+    - fuse_lowlevel.h
+    - cuse_lowlevel.h
+    - fuse_opt.h
+
+PARSER:
+  Defines:
+    FUSE_USE_VERSION: 31
+  IncludePaths:
+    - /usr/include/fuse3
+  SourcesPaths:
+    - fuse.h
+    - fuse_lowlevel.h
+    - cuse_lowlevel.h
+    - fuse_opt.h
+
+TRANSLATOR:
+  ConstRules:
+    defines: expand
+  Rules:
+    global:
+      - transform: lower
+      - action: accept
+        from: ^fuse_
+      - action: replace
+        from: ^fuse_
+        to: _
+      - action: accept
+        from: ^cuse_
+      - action: replace
+        from: ^cuse_
+        to: _
+      - transform: export
+    const:
+      - action: accept
+        from: ^FUSE_
+      - action: replace
+        from: ^fuse_
+        to: _
+      - action: accept
+        from: ^CUSE_
+      - action: replace
+        from: ^cuse_
+        to: _
+    type:
+      - action: replace
+        from: _t$
+    private:
+      - transform: unexport
+    post-global:
+      - action: replace
+        from: _$
+      - load: snakecase
