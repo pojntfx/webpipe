@@ -3,10 +3,8 @@ GENERATOR:
   PkgConfigOpts:
     - fuse3
   SysIncludes:
-    - fuse.h
-    - fuse_lowlevel.h
     - cuse_lowlevel.h
-    - fuse_opt.h
+    - fuse_lowlevel.h
 
 PARSER:
   Defines:
@@ -14,10 +12,8 @@ PARSER:
   IncludePaths:
     - /usr/include/fuse3
   SourcesPaths:
-    - fuse.h
-    - fuse_lowlevel.h
     - cuse_lowlevel.h
-    - fuse_opt.h
+    - fuse_lowlevel.h
 
 TRANSLATOR:
   ConstRules:
@@ -26,26 +22,35 @@ TRANSLATOR:
     global:
       - transform: lower
       - action: accept
-        from: ^fuse_
+        from: ^cuse_lowlevel_main
+      - action: accept
+        from: ^cuse_lowlevel_ops
+      - action: accept
+        from: ^cuse_info
       - action: replace
-        from: ^fuse_
+        from: ^cuse_
         to: _
       - action: accept
-        from: ^cuse_
+        from: ^fuse_req_t
+      - action: accept
+        from: ^fuse_file_info
+      - action: accept
+        from: ^fuse_conn_info
+      - action: accept
+        from: ^fuse_pollhandle
       - action: replace
-        from: ^cuse_
+        from: ^fuse_
         to: _
-      - transform: export
     const:
-      - action: accept
-        from: ^FUSE_
-      - action: replace
-        from: ^fuse_
-        to: _
       - action: accept
         from: ^CUSE_
       - action: replace
         from: ^cuse_
+        to: _
+      - action: accept
+        from: ^FUSE_
+      - action: replace
+        from: ^fuse_
         to: _
     type:
       - action: replace
