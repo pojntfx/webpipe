@@ -1,7 +1,6 @@
 #define FUSE_USE_VERSION 31
 
 #include <cuse_lowlevel.h>
-#include <fuse.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -51,7 +50,7 @@ void _wbcuse_poll(fuse_req_t req, struct fuse_file_info *fi,
   wbcuse_poll(req, fi, ph);
 }
 
-int wbcuse_start(int argc, char **argv) {
+int wbcuse_start(int registry_id, int argc, char **argv) {
   struct cuse_info ci;
   memset(&ci, 0, sizeof(ci));
 
@@ -64,7 +63,7 @@ int wbcuse_start(int argc, char **argv) {
 
   struct cuse_lowlevel_ops clop;
   memset(&clop, 0, sizeof(clop));
-  clop.init = _wbcuse_init;
+  clop.init = _wbcuse_init; // TODO: Pass the registry_id here
   clop.init_done = _wbcuse_init_done;
   clop.destroy = _wbcuse_destroy;
   clop.open = _wbcuse_open;

@@ -1,18 +1,22 @@
-package main
+package cuse
 
 // #cgo CFLAGS: -Wno-error=implicit-function-declaration
 // #cgo pkg-config: fuse3
 // #include "cuse.h"
 import "C"
+import "fmt"
 
-import (
-	"fmt"
-	"os"
-)
+type Void *C.void
+type Conn *C.fuse_conn_info
 
 //export wbcuse_init
-func wbcuse_init(userdata *C.void, conn *C.fuse_conn_info) {
-	fmt.Println("wbcuse_init", userdata, conn)
+func wbcuse_init(registry_id int, userdata *C.void, conn *C.fuse_conn_info) {
+	device, err := GlobalRegistry.GetDevice(registry_id)
+	if err != nil {
+		panic(err)
+	}
+
+	device.Init(registry_id, userdata, conn)
 }
 
 //export wbcuse_init_done
@@ -26,10 +30,8 @@ func wbcuse_destroy(userdata *C.void) {
 }
 
 //export wbcuse_open
-func wbcuse_open(req *C.struct_fuse_req, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_open", req, fi)
-
-	C.fuse_reply_open(req, fi)
+func wbcuse_open(req *C.fuse_req_t, fi *C.fuse_file_info) {
+	fmt.Println("wbcuse_open", fi)
 }
 
 //export wbcuse_read
@@ -67,11 +69,15 @@ func wbcuse_poll(req *C.fuse_req_t, fi *C.fuse_file_info, ph *C.fuse_pollhandle)
 	fmt.Println("wbcuse_poll", req, fi)
 }
 
-func main() {
-	args := []*C.char{}
-	for _, arg := range os.Args {
-		args = append(args, C.CString(arg))
+func StartCUSE(registryID int, args []string) error {
+	cargs := []*C.char{}
+	for _, arg := range args {
+		cargs = append(cargs, C.CString(arg))
 	}
 
-	panic(C.wbcuse_start(C.int(len(args)), &args[0]))
+	if ret := C.wbcuse_start(C.int(registryID), C.int(len(cargs)), &cargs[0]); ret != 0 {
+		return fmt.Errorf("could not start CUSE device: %v", ret)
+	}
+
+	return nil
 }
