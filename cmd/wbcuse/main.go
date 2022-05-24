@@ -1,21 +1,13 @@
 package main
 
-/*
-#cgo pkg-config: fuse3
-#include "cuse.h"
-*/
 import (
-	"C"
-)
-import (
-	"os"
+	"github.com/pojntfx/webpipe/pkg/cuse"
 )
 
 func main() {
-	args := []*C.char{}
-	for _, arg := range os.Args {
-		args = append(args, C.CString(arg))
-	}
+	id := 0
+	device := cuse.NewEchoDevice(id)
 
-	C.start(C.int(len(args)), &args[0])
+	cuse.GlobalRegistry.AddDevice(id, device)
+	defer cuse.GlobalRegistry.RemoveDevice(id)
 }
