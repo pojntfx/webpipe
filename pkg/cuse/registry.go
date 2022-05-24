@@ -5,12 +5,12 @@ import (
 	"sync"
 )
 
-type Device interface {
-	Init(registryID int, userdata Void, conn Conn)
-}
-
 var GlobalRegistry = &Registry{
 	devices: map[int]Device{},
+}
+
+type Device interface {
+	Init(registryID int, userdata Void, conn Conn)
 }
 
 type Registry struct {

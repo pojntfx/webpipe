@@ -5,10 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 
-void _wbcuse_init(void *userdata, struct fuse_conn_info *conn) {
-  wbcuse_init(userdata, conn);
-}
-
 void _wbcuse_init_done(void *userdata) { wbcuse_init_done(userdata); }
 
 void _wbcuse_destroy(void *userdata) { wbcuse_destroy(userdata); }
@@ -61,9 +57,13 @@ int wbcuse_start(int registry_id, int argc, char **argv) {
   ci.dev_info_argv = dev_info_argv;
   ci.flags = CUSE_UNRESTRICTED_IOCTL;
 
+  auto void _wbcuse_init(void *userdata, struct fuse_conn_info *conn) {
+    wbcuse_init(registry_id, userdata, conn);
+  }
+
   struct cuse_lowlevel_ops clop;
   memset(&clop, 0, sizeof(clop));
-  clop.init = _wbcuse_init; // TODO: Pass the registry_id here
+  clop.init = _wbcuse_init;
   clop.init_done = _wbcuse_init_done;
   clop.destroy = _wbcuse_destroy;
   clop.open = _wbcuse_open;
