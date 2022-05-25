@@ -8,65 +8,75 @@ import "fmt"
 
 type Void *C.void
 type Conn *C.fuse_conn_info
+type Request *C.fuse_req_t
+type FileInfo *C.fuse_file_info
+type Size *C.size_t
+type Offset C.off_t
+type Buffer *C.char
+type PollHandle *C.fuse_pollhandle
 
-//export wbcuse_init
-func wbcuse_init(registry_id int, userdata *C.void, conn *C.fuse_conn_info) {
-	device, err := GlobalRegistry.GetDevice(registry_id)
+func getDeviceOrPanic(registry_id C.int) Device {
+	device, err := GlobalRegistry.GetDevice(int(registry_id))
 	if err != nil {
 		panic(err)
 	}
 
-	device.Init(registry_id, userdata, conn)
+	return device
+}
+
+//export wbcuse_init
+func wbcuse_init(registry_id C.int, userdata Void, conn Conn) {
+	getDeviceOrPanic(registry_id).Init(userdata, conn)
 }
 
 //export wbcuse_init_done
-func wbcuse_init_done(userdata *C.void) {
-	fmt.Println("wbcuse_init_done", userdata)
+func wbcuse_init_done(registry_id C.int, userdata Void) {
+	getDeviceOrPanic(registry_id).InitDone(userdata)
 }
 
 //export wbcuse_destroy
-func wbcuse_destroy(userdata *C.void) {
-	fmt.Println("wbcuse_destroy", userdata)
+func wbcuse_destroy(registry_id C.int, userdata Void) {
+	getDeviceOrPanic(registry_id).Destroy(userdata)
 }
 
 //export wbcuse_open
-func wbcuse_open(req *C.fuse_req_t, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_open", fi)
+func wbcuse_open(registry_id C.int, req Request, fi FileInfo) {
+	getDeviceOrPanic(registry_id).Open(req, fi)
 }
 
 //export wbcuse_read
-func wbcuse_read(req *C.fuse_req_t, size C.size_t, off C.off_t, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_read", req, size, off, fi)
+func wbcuse_read(registry_id C.int, req Request, size Size, off Offset, fi FileInfo) {
+	getDeviceOrPanic(registry_id).Read(req, size, off, fi)
 }
 
 //export wbcuse_write
-func wbcuse_write(req *C.fuse_req_t, buf *C.char, size C.size_t, off C.off_t, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_write", req, buf, size, off, fi)
+func wbcuse_write(registry_id C.int, req Request, buf Buffer, size Size, off Offset, fi FileInfo) {
+	getDeviceOrPanic(registry_id).Write(req, buf, size, off, fi)
 }
 
 //export wbcuse_flush
-func wbcuse_flush(req *C.fuse_req_t, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_flush", req, fi)
+func wbcuse_flush(registry_id C.int, req Request, fi FileInfo) {
+	getDeviceOrPanic(registry_id).Flush(req, fi)
 }
 
 //export wbcuse_release
-func wbcuse_release(req *C.fuse_req_t, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_release", req, fi)
+func wbcuse_release(registry_id C.int, req Request, fi FileInfo) {
+	getDeviceOrPanic(registry_id).Release(req, fi)
 }
 
 //export wbcuse_fsync
-func wbcuse_fsync(req *C.fuse_req_t, datasync C.int, fi *C.fuse_file_info) {
-	fmt.Println("wbcuse_fsync", req, datasync, fi)
+func wbcuse_fsync(registry_id C.int, req Request, datasync C.int, fi FileInfo) {
+	getDeviceOrPanic(registry_id).Fsync(req, int(datasync), fi)
 }
 
 //export wbcuse_ioctl
-func wbcuse_ioctl(req *C.fuse_req_t, cmd C.int, arg *C.void, fi *C.fuse_file_info, flags C.uint, in_buf *C.void, in_bufz *C.size_t, out_bufsz *C.size_t) {
-	fmt.Println("wbcuse_ioctl", req, cmd, arg, fi, flags, in_buf, in_bufz, out_bufsz)
+func wbcuse_ioctl(registry_id C.int, req Request, cmd C.int, arg Void, fi FileInfo, flags C.uint, in_buf Void, in_bufz Size, out_bufsz Size) {
+	getDeviceOrPanic(registry_id).Ioctl(req, int(cmd), arg, fi, uint(flags), in_buf, in_bufz, out_bufsz)
 }
 
 //export wbcuse_poll
-func wbcuse_poll(req *C.fuse_req_t, fi *C.fuse_file_info, ph *C.fuse_pollhandle) {
-	fmt.Println("wbcuse_poll", req, fi)
+func wbcuse_poll(registry_id C.int, req Request, fi FileInfo, ph PollHandle) {
+	getDeviceOrPanic(registry_id).Poll(req, fi, ph)
 }
 
 func StartCUSE(registryID int, args []string) error {
