@@ -73,13 +73,30 @@ func wbcuse_poll(device unsafe.Pointer, req Request, fi FileInfo, ph PollHandle)
 	(*deviceContainer)(device).device.Poll(req, fi, ph)
 }
 
-func OpenDevice(device Device, args []string) error {
+func MountDevice(
+	device Device,
+
+	major uint,
+	minor uint,
+	name string,
+
+	fuseArgs []string,
+) error {
 	cargs := []*C.char{}
-	for _, arg := range args {
+	for _, arg := range fuseArgs {
 		cargs = append(cargs, C.CString(arg))
 	}
 
-	if ret := C.wbcuse_start(unsafe.Pointer(&deviceContainer{device}), C.int(len(cargs)), &cargs[0]); ret != 0 {
+	if ret := C.wbcuse_start(
+		unsafe.Pointer(&deviceContainer{device}),
+
+		C.uint(major),
+		C.uint(minor),
+		C.CString("DEVNAME="+name),
+
+		C.int(len(cargs)),
+		&cargs[0],
+	); ret != 0 {
 		return fmt.Errorf("could not start CUSE device: %v", ret)
 	}
 
