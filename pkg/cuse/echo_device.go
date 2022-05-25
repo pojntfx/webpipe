@@ -2,20 +2,10 @@ package cuse
 
 import "fmt"
 
-type EchoDevice struct {
-	Device
+type EchoDevice struct{}
 
-	registryID int
-}
-
-func NewEchoDevice(registryID int) *EchoDevice {
-	return &EchoDevice{
-		registryID: registryID,
-	}
-}
-
-func (d *EchoDevice) OpenDevice(args []string) error {
-	return StartCUSE(d.registryID, args)
+func NewEchoDevice() *EchoDevice {
+	return &EchoDevice{}
 }
 
 func (d *EchoDevice) Init(userdata Void, conn Conn) {
@@ -44,6 +34,10 @@ func (d *EchoDevice) Write(req Request, buf Buffer, size Size, off Offset, fi Fi
 
 func (d *EchoDevice) Flush(req Request, fi FileInfo) {
 	fmt.Println("Flush", req, fi)
+}
+
+func (d *EchoDevice) Release(req Request, fi FileInfo) {
+	fmt.Println("Release", req, fi)
 }
 
 func (d *EchoDevice) Fsync(req Request, datasync int, fi FileInfo) {

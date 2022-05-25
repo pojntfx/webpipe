@@ -4,7 +4,10 @@ package cuse
 // #cgo pkg-config: fuse3
 // #include "cuse.h"
 import "C"
-import "fmt"
+import (
+	"fmt"
+	"unsafe"
+)
 
 type Void *C.void
 type Conn *C.fuse_conn_info
@@ -15,77 +18,68 @@ type Offset C.off_t
 type Buffer *C.char
 type PollHandle *C.fuse_pollhandle
 
-func getDeviceOrPanic(registry_id C.int) Device {
-	device, err := GlobalRegistry.GetDevice(int(registry_id))
-	if err != nil {
-		panic(err)
-	}
-
-	return device
-}
-
 //export wbcuse_init
-func wbcuse_init(registry_id C.int, userdata Void, conn Conn) {
-	getDeviceOrPanic(registry_id).Init(userdata, conn)
+func wbcuse_init(device unsafe.Pointer, userdata Void, conn Conn) {
+	(*deviceContainer)(device).device.Init(userdata, conn)
 }
 
 //export wbcuse_init_done
-func wbcuse_init_done(registry_id C.int, userdata Void) {
-	getDeviceOrPanic(registry_id).InitDone(userdata)
+func wbcuse_init_done(device unsafe.Pointer, userdata Void) {
+	(*deviceContainer)(device).device.InitDone(userdata)
 }
 
 //export wbcuse_destroy
-func wbcuse_destroy(registry_id C.int, userdata Void) {
-	getDeviceOrPanic(registry_id).Destroy(userdata)
+func wbcuse_destroy(device unsafe.Pointer, userdata Void) {
+	(*deviceContainer)(device).device.Destroy(userdata)
 }
 
 //export wbcuse_open
-func wbcuse_open(registry_id C.int, req Request, fi FileInfo) {
-	getDeviceOrPanic(registry_id).Open(req, fi)
+func wbcuse_open(device unsafe.Pointer, req Request, fi FileInfo) {
+	(*deviceContainer)(device).device.Open(req, fi)
 }
 
 //export wbcuse_read
-func wbcuse_read(registry_id C.int, req Request, size Size, off Offset, fi FileInfo) {
-	getDeviceOrPanic(registry_id).Read(req, size, off, fi)
+func wbcuse_read(device unsafe.Pointer, req Request, size Size, off Offset, fi FileInfo) {
+	(*deviceContainer)(device).device.Read(req, size, off, fi)
 }
 
 //export wbcuse_write
-func wbcuse_write(registry_id C.int, req Request, buf Buffer, size Size, off Offset, fi FileInfo) {
-	getDeviceOrPanic(registry_id).Write(req, buf, size, off, fi)
+func wbcuse_write(device unsafe.Pointer, req Request, buf Buffer, size Size, off Offset, fi FileInfo) {
+	(*deviceContainer)(device).device.Write(req, buf, size, off, fi)
 }
 
 //export wbcuse_flush
-func wbcuse_flush(registry_id C.int, req Request, fi FileInfo) {
-	getDeviceOrPanic(registry_id).Flush(req, fi)
+func wbcuse_flush(device unsafe.Pointer, req Request, fi FileInfo) {
+	(*deviceContainer)(device).device.Flush(req, fi)
 }
 
 //export wbcuse_release
-func wbcuse_release(registry_id C.int, req Request, fi FileInfo) {
-	getDeviceOrPanic(registry_id).Release(req, fi)
+func wbcuse_release(device unsafe.Pointer, req Request, fi FileInfo) {
+	(*deviceContainer)(device).device.Release(req, fi)
 }
 
 //export wbcuse_fsync
-func wbcuse_fsync(registry_id C.int, req Request, datasync C.int, fi FileInfo) {
-	getDeviceOrPanic(registry_id).Fsync(req, int(datasync), fi)
+func wbcuse_fsync(device unsafe.Pointer, req Request, datasync C.int, fi FileInfo) {
+	(*deviceContainer)(device).device.Fsync(req, int(datasync), fi)
 }
 
 //export wbcuse_ioctl
-func wbcuse_ioctl(registry_id C.int, req Request, cmd C.int, arg Void, fi FileInfo, flags C.uint, in_buf Void, in_bufz Size, out_bufsz Size) {
-	getDeviceOrPanic(registry_id).Ioctl(req, int(cmd), arg, fi, uint(flags), in_buf, in_bufz, out_bufsz)
+func wbcuse_ioctl(device unsafe.Pointer, req Request, cmd C.int, arg Void, fi FileInfo, flags C.uint, in_buf Void, in_bufz Size, out_bufsz Size) {
+	(*deviceContainer)(device).device.Ioctl(req, int(cmd), arg, fi, uint(flags), in_buf, in_bufz, out_bufsz)
 }
 
 //export wbcuse_poll
-func wbcuse_poll(registry_id C.int, req Request, fi FileInfo, ph PollHandle) {
-	getDeviceOrPanic(registry_id).Poll(req, fi, ph)
+func wbcuse_poll(device unsafe.Pointer, req Request, fi FileInfo, ph PollHandle) {
+	(*deviceContainer)(device).device.Poll(req, fi, ph)
 }
 
-func StartCUSE(registryID int, args []string) error {
+func OpenDevice(device Device, args []string) error {
 	cargs := []*C.char{}
 	for _, arg := range args {
 		cargs = append(cargs, C.CString(arg))
 	}
 
-	if ret := C.wbcuse_start(C.int(registryID), C.int(len(cargs)), &cargs[0]); ret != 0 {
+	if ret := C.wbcuse_start(unsafe.Pointer(&deviceContainer{device}), C.int(len(cargs)), &cargs[0]); ret != 0 {
 		return fmt.Errorf("could not start CUSE device: %v", ret)
 	}
 
