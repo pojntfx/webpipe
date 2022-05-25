@@ -7,13 +7,9 @@ import (
 )
 
 func main() {
-	id := 0
-	device := cuse.NewEchoDevice(id)
+	device := cuse.NewEchoDevice()
 
-	cuse.GlobalRegistry.AddDevice(id, device)
-	defer cuse.GlobalRegistry.RemoveDevice(id)
-
-	if err := device.OpenDevice(os.Args); err != nil {
+	if err := cuse.OpenDevice(device, os.Args); err != nil {
 		panic(err)
 	}
 }
