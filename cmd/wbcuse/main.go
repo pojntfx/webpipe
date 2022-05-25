@@ -9,7 +9,15 @@ import (
 func main() {
 	device := cuse.NewEchoDevice()
 
-	if err := cuse.OpenDevice(device, os.Args); err != nil {
+	if err := cuse.MountDevice(
+		device,
+
+		69,
+		69,
+		"wbcuse",
+
+		os.Args,
+	); err != nil {
 		panic(err)
 	}
 }

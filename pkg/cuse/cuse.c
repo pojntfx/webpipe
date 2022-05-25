@@ -5,13 +5,14 @@
 #include <stdio.h>
 #include <string.h>
 
-int wbcuse_start(void *device, int argc, char **argv) {
+int wbcuse_start(void *device, unsigned int major, unsigned int minor,
+                 char *name, int argc, char **argv) {
   struct cuse_info ci;
   memset(&ci, 0, sizeof(ci));
 
-  const char *dev_info_argv[] = {"DEVNAME=wbcuse"};
-  ci.dev_major = 69;
-  ci.dev_minor = 69;
+  const char *dev_info_argv[] = {name};
+  ci.dev_major = major;
+  ci.dev_minor = minor;
   ci.dev_info_argc = 1;
   ci.dev_info_argv = dev_info_argv;
   ci.flags = CUSE_UNRESTRICTED_IOCTL;
