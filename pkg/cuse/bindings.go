@@ -2,6 +2,7 @@ package cuse
 
 // #cgo CFLAGS: -Wno-error=implicit-function-declaration
 // #cgo pkg-config: fuse3
+// #include "stdlib.h"
 // #include "cuse.h"
 import "C"
 import (
@@ -11,12 +12,31 @@ import (
 
 type Void *C.void
 type Conn *C.fuse_conn_info
-type Request *C.fuse_req_t
+type Request *C.struct_fuse_req
 type FileInfo *C.fuse_file_info
 type Size *C.size_t
 type Offset C.off_t
 type Buffer *C.char
 type PollHandle *C.fuse_pollhandle
+
+func ReplyOpen(req Request, fi FileInfo) error {
+	if ret := C.fuse_reply_open(req, fi); ret != 0 {
+		return fmt.Errorf("could not reply with open: error code %v", ret)
+	}
+
+	return nil
+}
+
+func ReplyBuf(req Request, buf []byte) error {
+	p := C.CString(string(buf))
+	defer C.free(unsafe.Pointer(p))
+
+	if ret := C.fuse_reply_buf(req, p, C.ulong(len(buf))); ret != 0 {
+		return fmt.Errorf("could not reply with buffer: error code %v", ret)
+	}
+
+	return nil
+}
 
 //export wbcuse_init
 func wbcuse_init(device unsafe.Pointer, userdata Void, conn Conn) {
