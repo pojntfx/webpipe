@@ -22,10 +22,18 @@ func (d *EchoDevice) Destroy(userdata Void) {
 
 func (d *EchoDevice) Open(req Request, fi FileInfo) {
 	fmt.Println("Open", req, fi)
+
+	if err := ReplyOpen(req, fi); err != nil {
+		panic(err)
+	}
 }
 
 func (d *EchoDevice) Read(req Request, size Size, off Offset, fi FileInfo) {
 	fmt.Println("Read", req, size, off, fi)
+
+	if err := ReplyBuf(req, []byte("Hello, world!\n")); err != nil {
+		panic(err)
+	}
 }
 
 func (d *EchoDevice) Write(req Request, buf Buffer, size Size, off Offset, fi FileInfo) {
