@@ -35,12 +35,12 @@ int wbcuse_start(void *device, unsigned int major, unsigned int minor,
 
   auto void _wbcuse_read(fuse_req_t req, size_t size, off_t off,
                          struct fuse_file_info * fi) {
-    wbcuse_read(device, req, size, off, fi);
+    wbcuse_read(device, req, (unsigned long)size, off, fi);
   }
 
   auto void _wbcuse_write(fuse_req_t req, const char *buf, size_t size,
                           off_t off, struct fuse_file_info *fi) {
-    wbcuse_write(device, req, buf, size, off, fi);
+    wbcuse_write(device, req, buf, (unsigned long)size, off, fi);
   }
 
   auto void _wbcuse_flush(fuse_req_t req, struct fuse_file_info * fi) {
@@ -60,7 +60,8 @@ int wbcuse_start(void *device, unsigned int major, unsigned int minor,
                           struct fuse_file_info *fi, unsigned int flags,
                           const void *in_buf, size_t in_bufsz,
                           size_t out_bufsz) {
-    wbcuse_ioctl(device, req, cmd, arg, fi, flags, in_buf, in_bufsz, out_bufsz);
+    wbcuse_ioctl(device, req, cmd, arg, fi, flags, in_buf,
+                 (unsigned long)in_bufsz, (unsigned long)out_bufsz);
   }
 
   auto void _wbcuse_poll(fuse_req_t req, struct fuse_file_info * fi,

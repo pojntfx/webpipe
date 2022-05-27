@@ -16,7 +16,7 @@ type Void *C.void
 type Conn *C.fuse_conn_info
 type Request *C.struct_fuse_req
 type FileInfo *C.fuse_file_info
-type Size *C.size_t
+type Size C.ulong
 type Offset C.off_t
 type Buffer *C.char
 type PollHandle *C.fuse_pollhandle
@@ -38,6 +38,26 @@ func ReplyBuf(req Request, buf []byte) error {
 	}
 
 	return nil
+}
+
+func ReplyWrite(req Request, n int) error {
+	if ret := C.fuse_reply_write(req, C.ulong(n)); ret != 0 {
+		return fmt.Errorf("could not reply with write: error code %v", ret)
+	}
+
+	return nil
+}
+
+func BufferToBytes(buf Buffer) []byte {
+	return C.GoBytes(unsafe.Pointer(buf), C.int(unsafe.Sizeof(buf)))
+}
+
+func OffsetToInt64(off Offset) int64 {
+	return int64(C.long(off))
+}
+
+func SizeToUint64(size Size) uint64 {
+	return uint64(size)
 }
 
 //export wbcuse_init
