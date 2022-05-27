@@ -8,6 +8,8 @@ import "C"
 import (
 	"fmt"
 	"unsafe"
+
+	"github.com/mattn/go-pointer"
 )
 
 type Void *C.void
@@ -40,57 +42,57 @@ func ReplyBuf(req Request, buf []byte) error {
 
 //export wbcuse_init
 func wbcuse_init(device unsafe.Pointer, userdata Void, conn Conn) {
-	(*deviceContainer)(device).device.Init(userdata, conn)
+	(pointer.Restore(device)).(*deviceContainer).device.Init(userdata, conn)
 }
 
 //export wbcuse_init_done
 func wbcuse_init_done(device unsafe.Pointer, userdata Void) {
-	(*deviceContainer)(device).device.InitDone(userdata)
+	(pointer.Restore(device)).(*deviceContainer).device.InitDone(userdata)
 }
 
 //export wbcuse_destroy
 func wbcuse_destroy(device unsafe.Pointer, userdata Void) {
-	(*deviceContainer)(device).device.Destroy(userdata)
+	(pointer.Restore(device)).(*deviceContainer).device.Destroy(userdata)
 }
 
 //export wbcuse_open
 func wbcuse_open(device unsafe.Pointer, req Request, fi FileInfo) {
-	(*deviceContainer)(device).device.Open(req, fi)
+	(pointer.Restore(device)).(*deviceContainer).device.Open(req, fi)
 }
 
 //export wbcuse_read
 func wbcuse_read(device unsafe.Pointer, req Request, size Size, off Offset, fi FileInfo) {
-	(*deviceContainer)(device).device.Read(req, size, off, fi)
+	(pointer.Restore(device)).(*deviceContainer).device.Read(req, size, off, fi)
 }
 
 //export wbcuse_write
 func wbcuse_write(device unsafe.Pointer, req Request, buf Buffer, size Size, off Offset, fi FileInfo) {
-	(*deviceContainer)(device).device.Write(req, buf, size, off, fi)
+	(pointer.Restore(device)).(*deviceContainer).device.Write(req, buf, size, off, fi)
 }
 
 //export wbcuse_flush
 func wbcuse_flush(device unsafe.Pointer, req Request, fi FileInfo) {
-	(*deviceContainer)(device).device.Flush(req, fi)
+	(pointer.Restore(device)).(*deviceContainer).device.Flush(req, fi)
 }
 
 //export wbcuse_release
 func wbcuse_release(device unsafe.Pointer, req Request, fi FileInfo) {
-	(*deviceContainer)(device).device.Release(req, fi)
+	(pointer.Restore(device)).(*deviceContainer).device.Release(req, fi)
 }
 
 //export wbcuse_fsync
 func wbcuse_fsync(device unsafe.Pointer, req Request, datasync C.int, fi FileInfo) {
-	(*deviceContainer)(device).device.Fsync(req, int(datasync), fi)
+	(pointer.Restore(device)).(*deviceContainer).device.Fsync(req, int(datasync), fi)
 }
 
 //export wbcuse_ioctl
 func wbcuse_ioctl(device unsafe.Pointer, req Request, cmd C.int, arg Void, fi FileInfo, flags C.uint, in_buf Void, in_bufz Size, out_bufsz Size) {
-	(*deviceContainer)(device).device.Ioctl(req, int(cmd), arg, fi, uint(flags), in_buf, in_bufz, out_bufsz)
+	(pointer.Restore(device)).(*deviceContainer).device.Ioctl(req, int(cmd), arg, fi, uint(flags), in_buf, in_bufz, out_bufsz)
 }
 
 //export wbcuse_poll
 func wbcuse_poll(device unsafe.Pointer, req Request, fi FileInfo, ph PollHandle) {
-	(*deviceContainer)(device).device.Poll(req, fi, ph)
+	(pointer.Restore(device)).(*deviceContainer).device.Poll(req, fi, ph)
 }
 
 func MountDevice(
@@ -108,7 +110,7 @@ func MountDevice(
 	}
 
 	if ret := C.wbcuse_start(
-		unsafe.Pointer(&deviceContainer{device}),
+		pointer.Save(&deviceContainer{device}),
 
 		C.uint(major),
 		C.uint(minor),
