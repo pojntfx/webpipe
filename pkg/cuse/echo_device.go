@@ -62,12 +62,12 @@ func (d *EchoDevice) Read(req Request, size Size, off Offset, fi FileInfo) {
 func (d *EchoDevice) Write(req Request, buf Buffer, size Size, off Offset, fi FileInfo) {
 	log.Println("Write", req, buf, size, off, fi)
 
-	n, err := d.backend.WriteAt(BufferToBytes(buf), OffsetToInt64(off))
+	_, err := d.backend.WriteAt(BufferToBytes(buf), OffsetToInt64(off))
 	if err != nil {
 		panic(err)
 	}
 
-	if err := ReplyWrite(req, n); err != nil {
+	if err := ReplyWrite(req, int(SizeToUint64(size))); err != nil {
 		panic(err)
 	}
 }
@@ -78,16 +78,32 @@ func (d *EchoDevice) Flush(req Request, fi FileInfo) {
 
 func (d *EchoDevice) Release(req Request, fi FileInfo) {
 	log.Println("Release", req, fi)
+
+	if err := ReplyError(req, 0); err != nil {
+		panic(err)
+	}
 }
 
 func (d *EchoDevice) Fsync(req Request, datasync int, fi FileInfo) {
 	log.Println("Fsync", req, datasync, fi)
+
+	if err := ReplyError(req, 0); err != nil {
+		panic(err)
+	}
 }
 
 func (d *EchoDevice) Ioctl(req Request, cmd int, arg Void, fi FileInfo, flags uint, inputBuf Void, inputBufSize Size, outBufSize Size) {
 	log.Println("Ioctl", req, cmd, arg, fi, flags, inputBuf, inputBufSize, outBufSize)
+
+	if err := ReplyError(req, 0); err != nil {
+		panic(err)
+	}
 }
 
 func (d *EchoDevice) Poll(req Request, fi FileInfo, ph PollHandle) {
 	log.Println("Poll", req, fi, ph)
+
+	if err := ReplyError(req, 0); err != nil {
+		panic(err)
+	}
 }
