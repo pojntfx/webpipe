@@ -48,6 +48,14 @@ func ReplyWrite(req Request, n int) error {
 	return nil
 }
 
+func ReplyError(req Request, err int) error {
+	if ret := C.fuse_reply_err(req, C.int(err)); ret != 0 {
+		return fmt.Errorf("could not reply with error: error code %v", ret)
+	}
+
+	return nil
+}
+
 func BufferToBytes(buf Buffer) []byte {
 	return C.GoBytes(unsafe.Pointer(buf), C.int(unsafe.Sizeof(buf)))
 }
