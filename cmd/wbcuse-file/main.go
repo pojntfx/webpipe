@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/pojntfx/webpipe/pkg/cuse"
+	"github.com/pojntfx/webpipe/pkg/devices"
 )
 
 func main() {
@@ -17,14 +18,14 @@ func main() {
 		panic(err)
 	}
 
-	device := cuse.NewEchoDevice(backend)
+	device := devices.NewFileDevice(backend)
 
 	if err := cuse.MountDevice(
 		device,
 
 		69,
 		69,
-		"wbcuse",
+		"wbcuse-file",
 
 		append([]string{os.Args[0]}, flag.Args()...),
 	); err != nil {
