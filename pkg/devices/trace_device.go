@@ -83,7 +83,7 @@ func (d *TraceDevice) Ioctl(req cuse.Request, cmd int, arg cuse.Void, fi cuse.Fi
 func (d *TraceDevice) Poll(req cuse.Request, fi cuse.FileInfo, ph cuse.PollHandle) {
 	log.Println("Poll", req, fi, ph)
 
-	if err := cuse.ReplyError(req, 0); err != nil {
+	if err := cuse.ReplyPoll(req, 0); err != nil {
 		panic(err)
 	}
 }

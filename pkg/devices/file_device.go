@@ -109,7 +109,7 @@ func (d *FileDevice) Ioctl(req cuse.Request, cmd int, arg cuse.Void, fi cuse.Fil
 func (d *FileDevice) Poll(req cuse.Request, fi cuse.FileInfo, ph cuse.PollHandle) {
 	log.Println("Poll", req, fi, ph)
 
-	if err := cuse.ReplyError(req, 0); err != nil {
+	if err := cuse.ReplyPoll(req, 0); err != nil {
 		panic(err)
 	}
 }
