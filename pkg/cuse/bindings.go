@@ -56,6 +56,14 @@ func ReplyError(req Request, err int) error {
 	return nil
 }
 
+func ReplyPoll(req Request, revents int) error {
+	if ret := C.fuse_reply_poll(req, C.uint(revents)); ret != 0 {
+		return fmt.Errorf("could not reply with poll: error code %v", ret)
+	}
+
+	return nil
+}
+
 func BufferToBytes(buf Buffer) []byte {
 	return C.GoBytes(unsafe.Pointer(buf), C.int(unsafe.Sizeof(buf)))
 }
